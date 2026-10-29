@@ -5,7 +5,7 @@ Usage:
   python filter_subs.py                  # fetch SOURCES, write subscription.txt
   python filter_subs.py --input a.txt    # test on a local file instead of fetching
   python filter_subs.py --reality-only   # keep ONLY Reality servers (default also keeps TLS ws/grpc/xhttp)
-  python filter_subs.py --alive          # also drop servers whose TCP port does not answer from the runner
+  python filter_subs.py --no-check       # skip the TCP+TLS handshake check (on by default)
 
 The TCP check runs from wherever the script runs (e.g. a GitHub runner), so it only
 proves the server is up, NOT that YouTube works through it from your Megafon.
@@ -14,6 +14,7 @@ import argparse
 import base64
 import re
 import socket
+import ssl
 import sys
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -28,6 +29,10 @@ SOURCES = [
     [
         "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt",
         "https://cdn.jsdelivr.net/gh/igareck/vpn-configs-for-russia@main/BLACK_VLESS_RUS.txt",
+    ],
+    [  # whitelist-mode servers: entry IPs that mobile operators let through; they also work on Wi-Fi
+        "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt",
+        "https://cdn.jsdelivr.net/gh/igareck/vpn-configs-for-russia@main/Vless-Reality-White-Lists-Rus-Mobile.txt",
     ],
 ]
 
@@ -128,12 +133,29 @@ def key(p):
             q.get("type"), q.get("serviceName") or q.get("path"))
 
 
-def tcp_alive(p):
+def check_server(p):
+    """True if TCP connects AND a TLS handshake with the declared SNI completes.
+    Catches dead servers. Cannot see Russian blocking (the runner is abroad)."""
+    q = p["q"]
+    sni = q.get("sni") or q.get("host") or p["host"]
     try:
-        with socket.create_connection((p["host"], p["port"]), timeout=TCP_TIMEOUT):
+        raw = socket.create_connection((p["host"], p["port"]), timeout=TCP_TIMEOUT)
+    except Exception:
+        return False
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        raw.settimeout(TCP_TIMEOUT)
+        with ctx.wrap_socket(raw, server_hostname=sni):
             return True
     except Exception:
         return False
+    finally:
+        try:
+            raw.close()
+        except Exception:
+            pass
 
 
 def main():
@@ -142,7 +164,7 @@ def main():
     ap.add_argument("--output", default="subscription.txt")
     ap.add_argument("--reality-only", action="store_true")
     ap.add_argument("--drop-fastly", action="store_true")
-    ap.add_argument("--alive", action="store_true")
+    ap.add_argument("--no-check", action="store_true")
     a = ap.parse_args()
 
     texts = []
@@ -173,10 +195,15 @@ def main():
             items.append(p)
 
     kept_pre = len(items)
-    if a.alive:
+    if not a.no_check:
         with ThreadPoolExecutor(32) as ex:
-            alive = list(ex.map(tcp_alive, items))
-        items = [p for p, ok in zip(items, alive) if ok]
+            ok = list(ex.map(check_server, items))
+        good = [p for p, k in zip(items, ok) if k]
+        if len(good) >= 5:
+            reasons["dead-tls-check"] = len(items) - len(good)
+            items = good
+        else:  # runner probably blocked: don't throw the list away
+            print("[warn] TLS check left <5 servers, ignoring its result")
 
     items.sort(key=lambda p: p["q"].get("security") != "reality")  # Reality first
     items = items[:MAX_SERVERS]

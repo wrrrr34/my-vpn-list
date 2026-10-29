@@ -1,5 +1,10 @@
 # profile-title: Custom clean (auto)
 # profile-update-interval: 6
-vless://f8d52ece-fad4-478d-875d-df6eed3befa7@154.86.119.102:443?security=reality&flow=xtls-rprx-vision&sni=sw.golangwikito.cfd&type=tcp&pbk=Kb8SsVPprs46BJSUNp5JvWLI-TFEiHmlBOXLQd37Glg&sid=a1037b25dcef6aa7&fp=chrome#01-NL-reality-tcp
-vless://f8d52ece-fad4-478d-875d-df6eed3befa7@sw.golangwikito.cfd:443?allowInsecure=1&encryption=none&flow=xtls-rprx-vision&pbk=Kb8SsVPprs46BJSUNp5JvWLI-TFEiHmlBOXLQd37Glg&security=reality&sid=a1037b25dcef6aa7&sni=sw.golangwikito.cfd&type=tcp&fp=chrome#02-NL-reality-tcp
-vless://f8d52ece-fad4-478d-875d-df6eed3befa7@sw.golangwikito.cfd:443?security=reality&flow=xtls-rprx-vision&pbk=Kb8SsVPprs46BJSUNp5JvWLI-TFEiHmlBOXLQd37Glg&sid=a1037b25dcef6aa7&sni=sw.golangwikito.cfd&type=tcp&headerType=none&host=sw.golangwikito.cfd&path=%2F&fp=chrome#03-NL-reality-tcp
+vless://bdf38176-48e9-40f1-9d1c-d501c333b464@151.101.67.6:443?encryption=none&security=tls&sni=amp-api-edge.apps.apple.com&alpn=h3&type=xhttp&mode=auto&host=kkbr.tm&path=%2Fcrownnet&fp=chrome#01-DE-tls-xhttp
+vless://22c2c689-767c-4042-a40a-a4189a6afd04@support.zoom.us:443?pcs=b83a89abf68f3ff79ba8fa0041347d78ad7d97555a2b62bada3bf0b51324d85c&path=%2Fwhatever%2Fvless&security=tls&host=support.zoom.us.sg4.zidstore.net&type=ws&sni=support.zoom.us.sg4.zidstore.net&fp=chrome#02-SG-tls-ws
+trojan://humanity@141.193.213.172:443?path=%2Fassignment&security=tls&insecure=0&host=www.calmlunch.com&ech=ip.gs+udp%3A%2F%2F8.8.8.8&type=ws&allowInsecure=0&sni=www.calmlunch.com&fp=chrome#03-FR-tls-ws
+trojan://humanity@45.80.111.7:443?path=%2Fassignment&security=tls&insecure=0&type=ws&allowInsecure=0&sni=www.calmlunch.com&fp=chrome#04-FR-tls-ws
+trojan://UAKWGor-h0woFsxKSWK92HptcM0g2k2h@176.114.95.242:443?security=tls&sni=lt-1.1984.love&fp=chrome#05-LT-tls-tcp
+trojan://humanity@45.131.4.38:443?alpn=http%2F1.1&host=www.pleadcourt.org&insecure=0&path=%2Fassignment&security=tls&sni=www.pleadcourt.org&type=ws&fp=chrome#06-NL-tls-ws
+trojan://humanity@8.47.69.0:443?path=%2Fassignment&security=tls&alpn=http%2F1.1&host=www.pleadcourt.org&type=ws&sni=www.pleadcourt.org&fp=chrome#07-NL-tls-ws
+trojan://UAKWGor-h0woFsxKSWK92HptcM0g2k2h@176.114.95.242:443/?type=tcp&security=tls&sni=us-1.1984.love&fp=chrome#08-US-tls-tcp

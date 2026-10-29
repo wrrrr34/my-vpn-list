@@ -1,10 +1,22 @@
 # profile-title: Custom clean (auto)
 # profile-update-interval: 6
-vless://bdf38176-48e9-40f1-9d1c-d501c333b464@151.101.67.6:443?encryption=none&security=tls&sni=amp-api-edge.apps.apple.com&alpn=h3&type=xhttp&mode=auto&host=kkbr.tm&path=%2Fcrownnet&fp=chrome#01-DE-tls-xhttp
-vless://22c2c689-767c-4042-a40a-a4189a6afd04@support.zoom.us:443?pcs=b83a89abf68f3ff79ba8fa0041347d78ad7d97555a2b62bada3bf0b51324d85c&path=%2Fwhatever%2Fvless&security=tls&host=support.zoom.us.sg4.zidstore.net&type=ws&sni=support.zoom.us.sg4.zidstore.net&fp=chrome#02-SG-tls-ws
-trojan://humanity@141.193.213.172:443?path=%2Fassignment&security=tls&insecure=0&host=www.calmlunch.com&ech=ip.gs+udp%3A%2F%2F8.8.8.8&type=ws&allowInsecure=0&sni=www.calmlunch.com&fp=chrome#03-FR-tls-ws
-trojan://humanity@45.80.111.7:443?path=%2Fassignment&security=tls&insecure=0&type=ws&allowInsecure=0&sni=www.calmlunch.com&fp=chrome#04-FR-tls-ws
-trojan://UAKWGor-h0woFsxKSWK92HptcM0g2k2h@176.114.95.242:443?security=tls&sni=lt-1.1984.love&fp=chrome#05-LT-tls-tcp
-trojan://humanity@45.131.4.38:443?alpn=http%2F1.1&host=www.pleadcourt.org&insecure=0&path=%2Fassignment&security=tls&sni=www.pleadcourt.org&type=ws&fp=chrome#06-NL-tls-ws
-trojan://humanity@8.47.69.0:443?path=%2Fassignment&security=tls&alpn=http%2F1.1&host=www.pleadcourt.org&type=ws&sni=www.pleadcourt.org&fp=chrome#07-NL-tls-ws
-trojan://UAKWGor-h0woFsxKSWK92HptcM0g2k2h@176.114.95.242:443/?type=tcp&security=tls&sni=us-1.1984.love&fp=chrome#08-US-tls-tcp
+vless://5a519754-a673-4462-83f6-5eb25d2af141@de12b.h1cloud.net:25172/?type=tcp&encryption=none&flow=&sni=www.cloudflare.com&security=reality&pbk=Xr55Hig_JTeUluiGfSnma6zMHG2Uv5Xu30ZODGF5xGA&sid=f09ac427e1abd14b&fp=chrome#01-DE-reality-tcp
+vless://50a87e21-f0e2-4b53-a787-91adfe748f63@swidenafterlanzerotte.space:443?encryption=none&flow=xtls-rprx-vision&pbk=MQrvfivvEfLGzDee7h0j5uC-DwaD_38_NXOY9-NhqxM&security=reality&sni=swidenafterlanzerotte.space&type=tcp&fp=chrome#02-US-reality-tcp
+vless://05c66efe-4f1e-4df9-99e6-2b1b624fa7ae@185.82.218.224:443?encryption=none&security=tls&sni=sg.jinggai.online&alpn=http%2F1.1&type=ws&path=%2Fconnect%2F01&host=sg.jinggai.online&fp=chrome#03-XX-tls-ws
+vless://05c66efe-4f1e-4df9-99e6-2b1b624fa7ae@193.42.62.86:443?encryption=none&security=tls&sni=sg.jinggai.online&alpn=http%2F1.1&type=ws&path=%2Fconnect%2F01&host=sg.jinggai.online&fp=chrome#04-XX-tls-ws
+vless://05c66efe-4f1e-4df9-99e6-2b1b624fa7ae@206.168.133.137:443?encryption=none&security=tls&sni=sg.jinggai.online&alpn=http%2F1.1&type=ws&path=%2Fconnect%2F01&host=sg.jinggai.online&fp=chrome#05-CA-tls-ws
+vless://05c66efe-4f1e-4df9-99e6-2b1b624fa7ae@45.192.243.25:443?encryption=none&security=tls&sni=sg.jinggai.online&alpn=http%2F1.1&type=ws&path=%2Fconnect%2F01&host=sg.jinggai.online&fp=chrome#06-CA-tls-ws
+vless://05c66efe-4f1e-4df9-99e6-2b1b624fa7ae@39.109.109.213:443?encryption=none&security=tls&sni=sg.jinggai.online&alpn=http%2F1.1&type=ws&path=%2Fconnect%2F01&host=sg.jinggai.online&fp=chrome#07-CA-tls-ws
+vless://05c66efe-4f1e-4df9-99e6-2b1b624fa7ae@65.49.232.101:443?encryption=none&security=tls&sni=sg.jinggai.online&alpn=http%2F1.1&type=ws&path=%2Fconnect%2F01&host=sg.jinggai.online&fp=chrome#08-CA-tls-ws
+vless://71a195c5-df47-47ad-81be-f4d3a3a21be3@199.232.239.239:443?encryption=none&security=tls&sni=ssl.fastly.com&alpn=h2&insecure=0&allowInsecure=0&type=xhttp&host=cloudnet2026.global.ssl.fastly.net&path=%2F%40CloudVPNchannel%2F%40CloudVPNchannel%2F%40CloudVPNchannel&mode=auto&fp=chrome#09-FI-tls-xhttp
+vless://cd6a469c-01ca-49a0-b521-755d7dfdfb9f@151.101.3.6:443?encryption=none&security=tls&sni=apps.apple.com&alpn=h3&type=xhttp&mode=packet-up&host=cloudrix.global.ssl.fastly.net&path=%2Ffastly&fp=chrome#10-FR-tls-xhttp
+vless://XpnTeam-61@199.232.78.160:443?path=%2F&security=tls&alpn=http%2F1.1&encryption=none&insecure=0&host=Appxdn.global.ssl.fastly.net&type=ws&allowInsecure=0&sni=ssl.fastly.com&fp=chrome#11-FR-tls-ws
+vless://bdf38176-48e9-40f1-9d1c-d501c333b464@151.101.67.6:443?encryption=none&security=tls&sni=amp-api-edge.apps.apple.com&alpn=h3&type=xhttp&mode=auto&host=kkbr.tm&path=%2Fcrownnet&fp=chrome#12-DE-tls-xhttp
+vless://72a258a9-281d-41ae-a9d9-2247064923e0@adheres-scruple.quick-cdn.net:443?path=%2Fws&security=tls&alpn=http%2F1.1&encryption=none&insecure=0&host=adheres-scruple.quick-cdn.net&type=ws&allowInsecure=0&sni=adheres-scruple.quick-cdn.net&fp=chrome#13-US-tls-ws
+trojan://humanity@141.193.213.172:443?path=%2Fassignment&security=tls&insecure=0&host=www.calmlunch.com&ech=ip.gs+udp%3A%2F%2F8.8.8.8&type=ws&allowInsecure=0&sni=www.calmlunch.com&fp=chrome#14-FR-tls-ws
+trojan://humanity@194.147.149.54:443?security=tls&sni=www.calmlunch.com&type=ws&host=www.calmlunch.com&path=%2Fassignment&allowInsecure=0&fp=chrome#15-FR-tls-ws
+trojan://humanity@45.80.111.7:443?path=%2Fassignment&security=tls&insecure=0&type=ws&allowInsecure=0&sni=www.calmlunch.com&fp=chrome#16-FR-tls-ws
+trojan://UAKWGor-h0woFsxKSWK92HptcM0g2k2h@176.114.95.242:443?security=tls&sni=lt-1.1984.love&fp=chrome#17-LT-tls-tcp
+trojan://humanity@45.131.4.38:443?alpn=http%2F1.1&host=www.pleadcourt.org&insecure=0&path=%2Fassignment&security=tls&sni=www.pleadcourt.org&type=ws&fp=chrome#18-NL-tls-ws
+trojan://humanity@8.47.69.0:443?path=%2Fassignment&security=tls&alpn=http%2F1.1&host=www.pleadcourt.org&type=ws&sni=www.pleadcourt.org&fp=chrome#19-NL-tls-ws
+trojan://UAKWGor-h0woFsxKSWK92HptcM0g2k2h@176.114.95.242:443/?type=tcp&security=tls&sni=us-1.1984.love&fp=chrome#20-US-tls-tcp

@@ -36,8 +36,8 @@ TCP_TIMEOUT = 4
 
 # Substrings in host/sni/host-header/name that mark "good ping, no real exit" or junk.
 BAD_SUBSTR = (
-    "fastly", "workers.dev", "pages.dev", "railway.app", "onappjet.com",
-    "anycast", "cloudflare-ech", "trycloudflare", "herokuapp", "vercel.app",
+    "workers.dev", "pages.dev", "railway.app", "onappjet.com",
+    "cloudflare-ech", "trycloudflare", "herokuapp", "vercel.app",
 )
 BAD_TLD = (".ir", ".ru", ".su", ".by")  # Iran-targeted junk, and RU/BY exits (no YouTube)
 
@@ -91,7 +91,7 @@ def parse(line):
     }
 
 
-def bad_reason(p, allow_tls):
+def bad_reason(p, allow_tls, drop_fastly=False):
     """Return a short reason string if the server should be dropped, else None."""
     q = p["q"]
     sec = q.get("security", "")
@@ -102,9 +102,13 @@ def bad_reason(p, allow_tls):
         pass
     else:
         return "no-reality-or-tls"
-    fields = " ".join([p["host"], q.get("sni", ""), q.get("host", ""), p["name"]]).lower()
+    if "anycast" in p["name"].lower():
+        return "name-anycast"
+    fields = " ".join([p["host"], q.get("sni", ""), q.get("host", "")]).lower()
     if any(s in fields for s in BAD_SUBSTR):
-        return "cdn-anycast-junk"
+        return "junk-host"
+    if drop_fastly and "fastly" in fields:
+        return "fastly"
     # server address: drop .ir and RU/BY/SU (a RU exit cannot open YouTube)
     if any(p["host"].endswith(t) for t in BAD_TLD):
         return "bad-server-tld"
@@ -137,6 +141,7 @@ def main():
     ap.add_argument("--input")
     ap.add_argument("--output", default="subscription.txt")
     ap.add_argument("--reality-only", action="store_true")
+    ap.add_argument("--drop-fastly", action="store_true")
     ap.add_argument("--alive", action="store_true")
     a = ap.parse_args()
 
@@ -155,12 +160,13 @@ def main():
             if not p:
                 continue
             total += 1
-            why = bad_reason(p, not a.reality_only)
+            why = bad_reason(p, not a.reality_only, a.drop_fastly)
             if why:
                 reasons[why] = reasons.get(why, 0) + 1
                 continue
             k = key(p)
             if k in seen:
+                reasons["duplicate"] = reasons.get("duplicate", 0) + 1
                 continue  # same server, different fingerprint variant
             seen.add(k)
             p["raw"] = re.sub(r"([?&])fp=[^&#]*", r"\1fp=chrome", p["raw"].split("#")[0])
@@ -172,6 +178,7 @@ def main():
             alive = list(ex.map(tcp_alive, items))
         items = [p for p, ok in zip(items, alive) if ok]
 
+    items.sort(key=lambda p: p["q"].get("security") != "reality")  # Reality first
     items = items[:MAX_SERVERS]
     print(f"parsed={total} after_filter={kept_pre} alive_kept={len(items)}")
     print("dropped:", reasons)

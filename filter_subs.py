@@ -4,7 +4,7 @@
 Usage:
   python filter_subs.py                  # fetch SOURCES, write subscription.txt
   python filter_subs.py --input a.txt    # test on a local file instead of fetching
-  python filter_subs.py --allow-tls      # also keep non-Reality TLS (ws/grpc/xhttp) servers
+  python filter_subs.py --reality-only   # keep ONLY Reality servers (default also keeps TLS ws/grpc/xhttp)
   python filter_subs.py --no-alive       # skip the TCP liveness check
 
 The TCP check runs from wherever the script runs (e.g. a GitHub runner), so it only
@@ -130,7 +130,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input")
     ap.add_argument("--output", default="subscription.txt")
-    ap.add_argument("--allow-tls", action="store_true")
+    ap.add_argument("--reality-only", action="store_true")
     ap.add_argument("--no-alive", action="store_true")
     a = ap.parse_args()
 
@@ -148,7 +148,7 @@ def main():
             if not p:
                 continue
             total += 1
-            if is_bad(p, a.allow_tls):
+            if is_bad(p, not a.reality_only):
                 continue
             k = key(p)
             if k in seen:

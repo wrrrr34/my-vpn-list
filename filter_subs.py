@@ -91,25 +91,30 @@ def parse(line):
     }
 
 
-def is_bad(p, allow_tls):
+def bad_reason(p, allow_tls):
+    """Return a short reason string if the server should be dropped, else None."""
     q = p["q"]
     sec = q.get("security", "")
     if sec == "reality":
         if not q.get("pbk"):
-            return True
+            return "reality-no-pbk"
     elif sec == "tls" and allow_tls:
         pass
     else:
-        return True  # none / empty / tls (when not allowed)
+        return "no-reality-or-tls"
     fields = " ".join([p["host"], q.get("sni", ""), q.get("host", ""), p["name"]]).lower()
     if any(s in fields for s in BAD_SUBSTR):
-        return True
-    for f in (p["host"], q.get("sni", "").lower(), q.get("host", "").lower()):
-        if f and any(f.endswith(t) for t in BAD_TLD):
-            return True
+        return "cdn-anycast-junk"
+    # server address: drop .ir and RU/BY/SU (a RU exit cannot open YouTube)
+    if any(p["host"].endswith(t) for t in BAD_TLD):
+        return "bad-server-tld"
+    # SNI / Host header may legitimately be a .ru site (Reality masks as one); drop only .ir
+    for f in (q.get("sni", "").lower(), q.get("host", "").lower()):
+        if f.endswith(".ir"):
+            return "iran-sni"
     if country(p["name"]) in ("RU", "BY", "IR"):
-        return True
-    return False
+        return "ru-by-ir-flag"
+    return None
 
 
 def key(p):
@@ -142,6 +147,7 @@ def main():
         texts = [fetch(m) for m in SOURCES]
 
     seen, items = set(), []
+    reasons = {}
     total = 0
     for t in texts:
         for line in maybe_b64(t).splitlines():
@@ -149,7 +155,9 @@ def main():
             if not p:
                 continue
             total += 1
-            if is_bad(p, not a.reality_only):
+            why = bad_reason(p, not a.reality_only)
+            if why:
+                reasons[why] = reasons.get(why, 0) + 1
                 continue
             k = key(p)
             if k in seen:
@@ -166,6 +174,7 @@ def main():
 
     items = items[:MAX_SERVERS]
     print(f"parsed={total} after_filter={kept_pre} alive_kept={len(items)}")
+    print("dropped:", reasons)
     if not items:
         sys.exit(1)  # don't overwrite a good file with an empty one in CI
     out = [

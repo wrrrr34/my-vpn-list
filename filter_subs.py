@@ -5,7 +5,7 @@ Usage:
   python filter_subs.py                  # fetch SOURCES, write subscription.txt
   python filter_subs.py --input a.txt    # test on a local file instead of fetching
   python filter_subs.py --reality-only   # keep ONLY Reality servers (default also keeps TLS ws/grpc/xhttp)
-  python filter_subs.py --no-alive       # skip the TCP liveness check
+  python filter_subs.py --alive          # also drop servers whose TCP port does not answer from the runner
 
 The TCP check runs from wherever the script runs (e.g. a GitHub runner), so it only
 proves the server is up, NOT that YouTube works through it from your Megafon.
@@ -31,7 +31,7 @@ SOURCES = [
     ],
 ]
 
-MAX_SERVERS = 40
+MAX_SERVERS = 60
 TCP_TIMEOUT = 4
 
 # Substrings in host/sni/host-header/name that mark "good ping, no real exit" or junk.
@@ -114,8 +114,9 @@ def is_bad(p, allow_tls):
 
 def key(p):
     q = p["q"]
-    return (p["scheme"], p["user"], p["host"], p["port"], q.get("sni"), q.get("pbk"),
-            q.get("sid"), q.get("type"), q.get("serviceName") or q.get("path"))
+    # sni is NOT part of the key: same host+port+user = same server
+    return (p["scheme"], p["user"], p["host"], p["port"], q.get("pbk"),
+            q.get("type"), q.get("serviceName") or q.get("path"))
 
 
 def tcp_alive(p):
@@ -131,7 +132,7 @@ def main():
     ap.add_argument("--input")
     ap.add_argument("--output", default="subscription.txt")
     ap.add_argument("--reality-only", action="store_true")
-    ap.add_argument("--no-alive", action="store_true")
+    ap.add_argument("--alive", action="store_true")
     a = ap.parse_args()
 
     texts = []
@@ -158,7 +159,7 @@ def main():
             items.append(p)
 
     kept_pre = len(items)
-    if not a.no_alive:
+    if a.alive:
         with ThreadPoolExecutor(32) as ex:
             alive = list(ex.map(tcp_alive, items))
         items = [p for p, ok in zip(items, alive) if ok]

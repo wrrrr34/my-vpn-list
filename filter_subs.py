@@ -6,16 +6,19 @@ Usage:
   python filter_subs.py --input a.txt    # test on a local file instead of fetching
   python filter_subs.py --reality-only   # keep ONLY Reality servers (default also keeps TLS ws/grpc/xhttp)
   python filter_subs.py --no-check       # skip the TCP+TLS handshake check (on by default)
+  python filter_subs.py --drop-ru        # drop servers in Russia (kept by default: RU entry IPs are how whitelist-bypass relays work)
 
 The TCP check runs from wherever the script runs (e.g. a GitHub runner), so it only
 proves the server is up, NOT that YouTube works through it from your Megafon.
 """
 import argparse
 import base64
+import json
 import re
 import socket
 import ssl
 import sys
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -23,20 +26,12 @@ from urllib.parse import parse_qs, unquote, urlsplit
 # Each source = list of mirrors, tried in order.
 SOURCES = [
     [
-        "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS_mobile.txt",
-        "https://cdn.jsdelivr.net/gh/igareck/vpn-configs-for-russia@main/BLACK_VLESS_RUS_mobile.txt",
-    ],
-    [
-        "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/BLACK_VLESS_RUS.txt",
-        "https://cdn.jsdelivr.net/gh/igareck/vpn-configs-for-russia@main/BLACK_VLESS_RUS.txt",
-    ],
-    [  # whitelist-mode servers: entry IPs that mobile operators let through; they also work on Wi-Fi
-        "https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt",
-        "https://cdn.jsdelivr.net/gh/igareck/vpn-configs-for-russia@main/Vless-Reality-White-Lists-Rus-Mobile.txt",
+        "https://raw.githubusercontent.com/whoahaow/rjsxrd/refs/heads/main/githubmirror/bypass/bypass-all.txt",
+        "https://cdn.jsdelivr.net/gh/whoahaow/rjsxrd@main/githubmirror/bypass/bypass-all.txt",
     ],
 ]
 
-MAX_SERVERS = 60
+MAX_SERVERS = 150
 TCP_TIMEOUT = 4
 
 # Substrings in host/sni/host-header/name that mark "good ping, no real exit" or junk.
@@ -96,7 +91,7 @@ def parse(line):
     }
 
 
-def bad_reason(p, allow_tls, drop_fastly=False):
+def bad_reason(p, allow_tls, drop_fastly=False, drop_ru=False):
     """Return a short reason string if the server should be dropped, else None."""
     q = p["q"]
     sec = q.get("security", "")
@@ -107,6 +102,13 @@ def bad_reason(p, allow_tls, drop_fastly=False):
         pass
     else:
         return "no-reality-or-tls"
+    # Things the sing-box core inside Hiddify cannot run; one bad outbound can break the whole profile.
+    if q.get("encryption", "none") not in ("none", ""):
+        return "vless-encryption"
+    if "ech" in q:
+        return "ech-param"
+    if "fm" in q:
+        return "fragment-param"
     if "anycast" in p["name"].lower():
         return "name-anycast"
     fields = " ".join([p["host"], q.get("sni", ""), q.get("host", "")]).lower()
@@ -115,14 +117,15 @@ def bad_reason(p, allow_tls, drop_fastly=False):
     if drop_fastly and "fastly" in fields:
         return "fastly"
     # server address: drop .ir and RU/BY/SU (a RU exit cannot open YouTube)
-    if any(p["host"].endswith(t) for t in BAD_TLD):
+    tlds = BAD_TLD if drop_ru else (".ir",)
+    if any(p["host"].endswith(t) for t in tlds):
         return "bad-server-tld"
     # SNI / Host header may legitimately be a .ru site (Reality masks as one); drop only .ir
     for f in (q.get("sni", "").lower(), q.get("host", "").lower()):
         if f.endswith(".ir"):
             return "iran-sni"
-    if country(p["name"]) in ("RU", "BY", "IR"):
-        return "ru-by-ir-flag"
+    if country(p["name"]) in (("RU", "BY", "IR") if drop_ru else ("IR",)):
+        return "flag-filter"
     return None
 
 
@@ -158,6 +161,35 @@ def check_server(p):
             pass
 
 
+def ru_hosts(items):
+    """Hosts whose IP geolocates to Russia (ip-api.com, free, HTTP). Empty set on any failure."""
+    ips = {}
+    for p in items:
+        try:
+            ips[p["host"]] = socket.gethostbyname(p["host"])
+        except Exception:
+            pass
+    uniq = sorted(set(ips.values()))
+    cc = {}
+    for i in range(0, len(uniq), 100):
+        chunk = uniq[i:i + 100]
+        body = json.dumps([{"query": ip, "fields": "query,countryCode,status"} for ip in chunk]).encode()
+        req = urllib.request.Request("http://ip-api.com/batch", data=body,
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                res = json.load(r)
+        except Exception as e:
+            print(f"[warn] geoip failed: {e}", file=sys.stderr)
+            return set()
+        for row in res:
+            if row.get("status") == "success":
+                cc[row["query"]] = row.get("countryCode")
+        if i + 100 < len(uniq):
+            time.sleep(5)
+    return {h for h, ip in ips.items() if cc.get(ip) == "RU"}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input")
@@ -165,6 +197,7 @@ def main():
     ap.add_argument("--reality-only", action="store_true")
     ap.add_argument("--drop-fastly", action="store_true")
     ap.add_argument("--no-check", action="store_true")
+    ap.add_argument("--drop-ru", action="store_true")
     a = ap.parse_args()
 
     texts = []
@@ -182,7 +215,7 @@ def main():
             if not p:
                 continue
             total += 1
-            why = bad_reason(p, not a.reality_only, a.drop_fastly)
+            why = bad_reason(p, not a.reality_only, a.drop_fastly, a.drop_ru)
             if why:
                 reasons[why] = reasons.get(why, 0) + 1
                 continue
@@ -191,8 +224,21 @@ def main():
                 reasons["duplicate"] = reasons.get("duplicate", 0) + 1
                 continue  # same server, different fingerprint variant
             seen.add(k)
-            p["raw"] = re.sub(r"([?&])fp=[^&#]*", r"\1fp=chrome", p["raw"].split("#")[0])
+            raw = re.sub(r"([?&])fp=[^&#]*", r"\1fp=chrome", p["raw"].split("#")[0])
+            raw = raw.replace("type=raw", "type=tcp")  # Xray's new name for tcp; older parsers choke on it
+            if "fp=" not in raw:
+                raw += ("&" if "?" in raw else "?") + "fp=chrome"
+            p["raw"] = raw
             items.append(p)
+
+    if a.drop_ru:
+        ru = ru_hosts(items)
+        rest = [p for p in items if p["host"] not in ru]
+        if len(rest) >= 5:
+            reasons["ru-ip"] = len(items) - len(rest)
+            items = rest
+        elif ru:
+            print("[warn] RU filter would leave <5 servers, ignoring it")
 
     kept_pre = len(items)
     if not a.no_check:
@@ -213,7 +259,7 @@ def main():
         sys.exit(1)  # don't overwrite a good file with an empty one in CI
     out = [
         "# profile-title: Custom clean (auto)",
-        "# profile-update-interval: 6",
+        "# profile-update-interval: 3",
     ]
     for i, p in enumerate(items, 1):
         t = p["q"].get("type", "tcp")

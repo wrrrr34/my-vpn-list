@@ -8,6 +8,11 @@ Usage:
   python filter_subs.py --no-check       # skip the TCP+TLS handshake check (on by default)
   python filter_subs.py --drop-ru        # drop servers in Russia (kept by default: RU entry IPs are how whitelist-bypass relays work)
 
+Outputs:
+  --output subscription.txt            general list, Reality first
+  --mobile-output subscription-mobile.txt  same servers, RU entry IPs first
+                                       (mobile operators' whitelists let only those through)
+
 The TCP check runs from wherever the script runs (e.g. a GitHub runner), so it only
 proves the server is up, NOT that YouTube works through it from your Megafon.
 """
@@ -190,10 +195,24 @@ def ru_hosts(items):
     return {h for h, ip in ips.items() if cc.get(ip) == "RU"}
 
 
+def write_sub(path, items):
+    out = [
+        "# profile-title: Custom clean (auto)",
+        "# profile-update-interval: 3",
+    ]
+    for i, p in enumerate(items, 1):
+        t = p["q"].get("type", "tcp")
+        out.append(f"{p['raw']}#{i:02d}-{country(p['name'])}-{p['q'].get('security')}-{t}")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(out) + "\n")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input")
     ap.add_argument("--output", default="subscription.txt")
+    ap.add_argument("--mobile-output", default="subscription-mobile.txt",
+                    help="second file with RU entry IPs first (for mobile whitelists); empty string to disable")
     ap.add_argument("--reality-only", action="store_true")
     ap.add_argument("--drop-fastly", action="store_true")
     ap.add_argument("--no-check", action="store_true")
@@ -251,21 +270,18 @@ def main():
         else:  # runner probably blocked: don't throw the list away
             print("[warn] TLS check left <5 servers, ignoring its result")
 
+    # RU entry IPs are what mobile-operator whitelists (Megafon etc.) let through.
+    ru = ru_hosts(items) if a.mobile_output else set()
     items.sort(key=lambda p: p["q"].get("security") != "reality")  # Reality first
-    items = items[:MAX_SERVERS]
-    print(f"parsed={total} after_filter={kept_pre} alive_kept={len(items)}")
+    print(f"parsed={total} after_filter={kept_pre} alive_kept={len(items)} ru_entry={len(ru)}")
     print("dropped:", reasons)
     if not items:
         sys.exit(1)  # don't overwrite a good file with an empty one in CI
-    out = [
-        "# profile-title: Custom clean (auto)",
-        "# profile-update-interval: 3",
-    ]
-    for i, p in enumerate(items, 1):
-        t = p["q"].get("type", "tcp")
-        out.append(f"{p['raw']}#{i:02d}-{country(p['name'])}-{p['q'].get('security')}-{t}")
-    with open(a.output, "w", encoding="utf-8") as f:
-        f.write("\n".join(out) + "\n")
+    write_sub(a.output, items[:MAX_SERVERS])
+    if a.mobile_output:
+        mob = sorted(items, key=lambda p: (p["host"] not in ru,
+                                           p["q"].get("security") != "reality"))
+        write_sub(a.mobile_output, mob[:MAX_SERVERS])
 
 
 if __name__ == "__main__":
